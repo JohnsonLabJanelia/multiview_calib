@@ -159,6 +159,7 @@ def main(folder_images, output_folder, description,
     plt.ylim(image_shape[0], 0)
     plt.savefig(os.path.join(output_folder, "detected_keypoints.jpg"), bbox_inches='tight')
     
+    import pdb; pdb.set_trace()
     calib_flags = 0
     if rational_model:
         calib_flags += cv2.CALIB_RATIONAL_MODEL
@@ -215,6 +216,7 @@ def main(folder_images, output_folder, description,
     reproj_error = reprojection_error(mtx, distCoeffs, rvecs, tvecs)
     print("RMS Reprojection Error: {}, Total Reprojection Error: {}".format(ret, reproj_error))
     
+    import pdb; pdb.set_trace()
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, distCoeffs, image_shape[::-1], alpha, 
                                                       image_shape[::-1], centerPrincipalPoint=False)
     

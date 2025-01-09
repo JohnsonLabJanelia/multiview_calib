@@ -1,4 +1,0 @@
-{
-    "views": ["cam0", "cam1", "cam2"],
-    "minimal_tree": [["cam0", "cam1"],["cam1", "cam2"]]
-}
