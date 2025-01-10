@@ -287,8 +287,8 @@ def visualise_cameras_and_triangulated_points(
         ax.plot(
             [p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], "k", alpha=1, linewidth=1
         )
-        ax.scatter(*p1, marker="s", s=120, label=view2)
-        ax.scatter(*p2, marker="x", s=250)
+        ax.scatter(*p1, marker="s", s=120)
+        ax.scatter(*p2, marker="x", s=250, label=view2)
 
     ax.set_xlabel("X Label")
     ax.set_ylabel("Y Label")

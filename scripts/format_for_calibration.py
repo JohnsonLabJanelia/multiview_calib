@@ -14,12 +14,14 @@ root_folder = args.root_folder
 config = utils.json_read(root_folder + "/config.json")
 img_path = config["img_path"]
 cam_ordered = config["cam_ordered"]
-minimal_tree = config["minimal_tree"]
 world_coordinate_img = config["world_coordinate_img"]
+first_view = config["first_view"]
+second_view_order = config["second_view_order"]
 charuco_setup_file = os.path.join(root_folder, "charuco_setup.json")
 
-# minimal_tree = []
-# second_view_order = [0, 2, 3, 5, 6, 14, 15, 8, 9, 10, 11, 12, 7, 4, 1, 13]
+minimal_tree = []
+for second_view_idx in second_view_order:
+    minimal_tree.append([cam_ordered[first_view], cam_ordered[second_view_idx]])
 
 setup_dict = {"views": cam_ordered, "minimal_tree": minimal_tree}
 utils.json_write(root_folder + "/setup.json", setup_dict)

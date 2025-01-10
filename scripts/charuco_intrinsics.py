@@ -19,7 +19,10 @@ def read_chessboards(images, board, aruco_dict, verbose):
     all_ids = []
     # SUB PIXEL CORNER DETECTION CRITERION
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 200, 0.00001)
-    wait_time = 200
+    if verbose:
+        wait_time = 0
+    else:
+        wait_time = 200
 
     charuco_detector = cv.aruco.CharucoDetector(board)
     objpoints = []
@@ -29,6 +32,34 @@ def read_chessboards(images, board, aruco_dict, verbose):
     imsize = frame_0.shape[:2]
     all_im_ids = []
     num_points_thres = 10
+
+    colors_24 = [
+        (96, 80, 96),
+        (202, 97, 112),
+        (215, 162, 200),
+        (113, 230, 151),
+        (8, 44, 252),
+        (160, 32, 190),
+        (59, 105, 17),
+        (54, 51, 35),
+        (239, 113, 29),
+        (87, 57, 158),
+        (96, 121, 14),
+        (133, 207, 7),
+        (47, 129, 11),
+        (244, 240, 238),
+        (247, 164, 44),
+        (174, 38, 168),
+        (56, 33, 206),
+        (57, 15, 99),
+        (27, 9, 63),
+        (152, 39, 170),
+        (4, 85, 176),
+        (182, 243, 89),
+        (74, 103, 12),
+        (183, 81, 129),
+    ]
+
     for im in images:
         if verbose:
             print("=> Processing image {0}".format(im))
@@ -76,16 +107,31 @@ def read_chessboards(images, board, aruco_dict, verbose):
                         image_copy = np.copy(frame)
 
                         for pts_idx in range(res2[1].shape[0]):
+                            # breakpoint()
                             cv.circle(
                                 image_copy,
                                 (
                                     int(res2[1][pts_idx, 0, 0]),
                                     int(res2[1][pts_idx, 0, 1]),
                                 ),
-                                25,
+                                15,
                                 (255, 0, 255),
                                 -1,
                             )
+
+                            cv.putText(
+                                image_copy,
+                                str(int(res2[2][pts_idx][0])),
+                                (
+                                    int(res2[1][pts_idx, 0, 0]),
+                                    int(res2[1][pts_idx, 0, 1]),
+                                ),
+                                cv.FONT_HERSHEY_SIMPLEX,
+                                2,
+                                colors_24[pts_idx],
+                                5,
+                            )
+
                         image_resize = cv.resize(image_copy, (1604, 1100))
                         cv.imshow("{}".format(im), image_resize)
                         key = cv.waitKey(wait_time)
@@ -324,3 +370,6 @@ if __name__ == "__main__":
     parser.add_argument("--root_folder", "-r", type=str, required=True)
     args = parser.parse_args()
     main(**vars(args))
+
+# "world_coordinate_img": "15_41_11_091"
+# "world_coordinate_img": "19_14_18_638"
