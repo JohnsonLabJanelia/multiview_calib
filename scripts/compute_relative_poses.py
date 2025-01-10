@@ -29,6 +29,7 @@ def main(
     setup="setup.json",
     intrinsics="intrinsics.json",
     landmarks="landmarks.json",
+    landmarks_global="landmarks_global.json",
     filenames="filenames.json",
     method="8point",
     dump_images=True,
@@ -41,6 +42,7 @@ def main(
     setup = utils.json_read(setup)
     intrinsics = utils.json_read(intrinsics)
     landmarks = utils.json_read(landmarks)
+    landmarks_global = utils.json_read(landmarks_global)
 
     if not verify_view_tree(setup["minimal_tree"]):
         raise ValueError("minimal_tree is not a valid tree!")
@@ -59,6 +61,7 @@ def main(
             relative_poses,
             intrinsics,
             landmarks,
+            landmarks_global,
             filenames,
             output_path=output_path,
         )
@@ -103,6 +106,14 @@ if __name__ == "__main__":
         help="JSON file containing the landmark for each view",
     )
     parser.add_argument(
+        "--landmarks_global",
+        "-lg",
+        type=str,
+        required=True,
+        default="landmarks_global.json",
+        help="JSON file containing global landmark for each view",
+    )
+    parser.add_argument(
         "--method",
         "-m",
         type=str,
@@ -138,5 +149,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(**vars(args))
-
-# python compute_relative_poses.py -s setup.json -i intrinsics.json -l landmarks.json -f filenames.json --dump_images

@@ -13,6 +13,7 @@ import shutil
 import pickle
 import logging
 import numpy as np
+import cv2
 
 __all__ = [
     "json_read",
@@ -33,6 +34,9 @@ __all__ = [
     "indexes",
     "draw_points",
     "draw_rectangles",
+    "save_intrinsics_yaml",
+    "read_intrinsics_yaml",
+    "save_extrinsics_yaml",
 ]
 
 colors = [
@@ -277,3 +281,45 @@ def draw_points(image, centers, radius, color="r"):
             _image, tuple(point.astype(np.int)), radius, color=color, thickness=-1
         )
     return _image
+
+
+def save_intrinsics_yaml(
+    output_file, img_width, img_height, intrinsic_matrix, distortion_coefficients
+):
+    # distortion_coefficients = np.asarray(distortion_coefficients).reshape(5, 1)
+
+    # save it using opencv
+    s = cv2.FileStorage(output_file, cv2.FileStorage_WRITE)
+    s.write("image_width", img_width)
+    s.write("image_height", img_height)
+
+    s.write("camera_matrix", intrinsic_matrix)
+    s.write("distortion_coefficients", distortion_coefficients)
+    s.release()
+
+
+def read_intrinsics_yaml(filename):
+    fs = cv2.FileStorage(cv2.samples.findFile(filename, False), cv2.FileStorage_READ)
+    if fs.isOpened():
+        img_width = int(fs.getNode("image_width").real())
+        img_height = int(fs.getNode("image_height").real())
+        img_size = [img_width, img_height]
+        cam_matrix = fs.getNode("camera_matrix").mat()
+        dist_coefficients = fs.getNode("distortion_coefficients").mat()
+        return True, img_size, cam_matrix, dist_coefficients
+    return False, [], [], []
+
+
+def save_extrinsics_yaml(
+    output_file, img_size, cam_matrix, dist_coefficients, rc_ext, tc_ext
+):
+    s = cv2.FileStorage(output_file, cv2.FileStorage_WRITE)
+    s.write("image_width", img_size[0])
+    s.write("image_height", img_size[1])
+
+    s.write("camera_matrix", cam_matrix)
+    s.write("distortion_coefficients", dist_coefficients)
+
+    s.write("tc_ext", tc_ext)
+    s.write("rc_ext", rc_ext)
+    s.release()

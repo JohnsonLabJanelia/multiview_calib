@@ -90,6 +90,7 @@ def visualise_epilines(
     relative_poses,
     intrinsics,
     landmarks,
+    landmarks_global,
     filenames,
     output_path="output/relative_poses/",
 ):
@@ -107,44 +108,63 @@ def visualise_epilines(
         img1_undist = cv2.undistort(img1.copy(), K1, dist1, None, K1)
         img2_undist = cv2.undistort(img2.copy(), K2, dist2, None, K2)
 
-        pts1, pts2, _ = _common_landmarks(
+        pts1_common, pts2_common, ids_common = _common_landmarks(
             landmarks[view1]["landmarks"],
             landmarks[view2]["landmarks"],
             landmarks[view1]["ids"],
             landmarks[view2]["ids"],
         )
 
-        pts1_undist = undistort_points(pts1, K1, dist1)
-        pts2_undist = undistort_points(pts2, K2, dist2)
+        overlap_with_global = False
+        for i, idx in enumerate(ids_common):
+            if idx in landmarks_global["ids"]:
+                overlap_with_global = True
+                break
 
-        if "F" in relative_poses[(view1, view2)]:
-            F = np.array(relative_poses[(view1, view2)]["F"])
-        else:
-            Rd = np.array(relative_poses[(view1, view2)]["Rd"])
-            td = np.array(relative_poses[(view1, view2)]["td"])
+        if overlap_with_global:
+            # show on global image only
+            pts1 = []
+            for i, idx in enumerate(ids_common):
+                if idx in landmarks_global["ids"]:
+                    pts1.append(pts1_common[i].tolist())
+            pts1 = np.vstack(pts1)
+            pts2 = []
+            for i, idx in enumerate(ids_common):
+                if idx in landmarks_global["ids"]:
+                    pts2.append(pts2_common[i].tolist())
+            pts2 = np.vstack(pts2)
 
-            F = fundamental_from_relative_pose(Rd, td, K1, K2)
+            pts1_undist = undistort_points(pts1, K1, dist1)
+            pts2_undist = undistort_points(pts2, K2, dist2)
 
-        idx = np.arange(min(pts1_undist.shape[0], pts2_undist.shape[0]))
-        np.random.shuffle(idx)
-        img1_, img2_ = draw_epilines(
-            img1_undist,
-            img2_undist,
-            pts1_undist[idx[:50]],
-            pts2_undist[idx[:50]],
-            F,
-            None,
-            linewidth=2,
-            markersize=20,
-        )
+            if "F" in relative_poses[(view1, view2)]:
+                F = np.array(relative_poses[(view1, view2)]["F"])
+            else:
+                Rd = np.array(relative_poses[(view1, view2)]["Rd"])
+                td = np.array(relative_poses[(view1, view2)]["td"])
 
-        utils.mkdir(output_path)
+                F = fundamental_from_relative_pose(Rd, td, K1, K2)
 
-        hmin = np.minimum(img1_.shape[0], img2_.shape[0])
-        imageio.imsave(
-            os.path.join(output_path, "{}_{}.jpg".format(view1, view2)),
-            np.hstack([img1_[:hmin], img2_[:hmin]]),
-        )
+            idx = np.arange(min(pts1_undist.shape[0], pts2_undist.shape[0]))
+            # np.random.shuffle(idx)
+            img1_, img2_ = draw_epilines(
+                img1_undist,
+                img2_undist,
+                pts1_undist[idx],
+                pts2_undist[idx],
+                F,
+                None,
+                linewidth=2,
+                markersize=20,
+            )
+
+            utils.mkdir(output_path)
+
+            hmin = np.minimum(img1_.shape[0], img2_.shape[0])
+            imageio.imsave(
+                os.path.join(output_path, "{}_{}.jpg".format(view1, view2)),
+                np.hstack([img1_[:hmin], img2_[:hmin]]),
+            )
 
 
 def _print_relative_pose_info(
@@ -232,6 +252,7 @@ def visualise_cameras_and_triangulated_points(
 
     all_points = []
     for i, (view1, view2) in enumerate(reversed(minimal_tree)):
+        # breakpoint()
         R1 = np.asarray(poses[view1]["R"], np.float64)
         t1 = np.asarray(poses[view1]["t"], np.float64).reshape(3, 1)
         R2 = np.asarray(poses[view2]["R"], np.float64)
@@ -254,18 +275,20 @@ def visualise_cameras_and_triangulated_points(
         all_points.append(t2_inv.reshape(1, 3))
         all_points.append(points_3d.T)
 
-        color_view1 = view_colors[views.index(view1)]
+        # color_view1 = view_colors[views.index(view1)]
         # color_view2 = view_colors[views.index(view2)]
 
-        ax.scatter(points_3d[0], points_3d[1], points_3d[2], c=np.array([color_view1]))
+        ax.scatter(
+            points_3d[0], points_3d[1], points_3d[2]
+        )  # c=np.array([color_view1]))
 
         p1 = t1_inv.ravel()
         p2 = t2_inv.ravel()
         ax.plot(
             [p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], "k", alpha=1, linewidth=1
         )
-        ax.scatter(*p1, c=np.array([color_view1]), marker="s", s=120, label=view1)
-        ax.scatter(*p2, c=np.array([color_view1]), marker="x", s=250)
+        ax.scatter(*p1, marker="s", s=120, label=view2)
+        ax.scatter(*p2, marker="x", s=250)
 
     ax.set_xlabel("X Label")
     ax.set_ylabel("Y Label")
