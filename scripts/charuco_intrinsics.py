@@ -2,16 +2,30 @@ import cv2 as cv
 import numpy as np
 import os
 import argparse
-from lasercalib.utils import probe_monotonicity
-import matplotlib.pyplot as plt
 import pickle
 import logging
 from multiview_calib import utils
+import colorsys
+import concurrent.futures
+from functools import partial
+import matplotlib
+
+matplotlib.use("Agg")  # Set the backend to 'Agg'
+import matplotlib.pyplot as plt
+
+from multiview_calib.intrinsics import probe_monotonicity
 
 logger = logging.getLogger(__name__)
 
 
-def read_chessboards(images, board, aruco_dict, verbose):
+def generate_distinct_colors(n):
+    """Generate `n` distinct RGB colors evenly spaced in HSV space."""
+    return [
+        tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / n, 1, 1)) for i in range(n)
+    ]
+
+
+def read_chessboards(images, board, aruco_dict, number_of_markers, verbose):
     """
     Charuco base pose estimation.
     """
@@ -33,36 +47,11 @@ def read_chessboards(images, board, aruco_dict, verbose):
     all_im_ids = []
     num_points_thres = 10
 
-    colors_24 = [
-        (96, 80, 96),
-        (202, 97, 112),
-        (215, 162, 200),
-        (113, 230, 151),
-        (8, 44, 252),
-        (160, 32, 190),
-        (59, 105, 17),
-        (54, 51, 35),
-        (239, 113, 29),
-        (87, 57, 158),
-        (96, 121, 14),
-        (133, 207, 7),
-        (47, 129, 11),
-        (244, 240, 238),
-        (247, 164, 44),
-        (174, 38, 168),
-        (56, 33, 206),
-        (57, 15, 99),
-        (27, 9, 63),
-        (152, 39, 170),
-        (4, 85, 176),
-        (182, 243, 89),
-        (74, 103, 12),
-        (183, 81, 129),
-    ]
+    marker_colors = generate_distinct_colors(number_of_markers)
 
     for im in images:
         if verbose:
-            print("=> Processing image {0}".format(im))
+            logging.info("=> Processing image {0}".format(im))
         frame = cv.imread(im)
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         corners, ids, rejectedImgPoints = cv.aruco.detectMarkers(gray, aruco_dict)
@@ -115,7 +104,7 @@ def read_chessboards(images, board, aruco_dict, verbose):
                                     int(res2[1][pts_idx, 0, 1]),
                                 ),
                                 15,
-                                (255, 0, 255),
+                                marker_colors[pts_idx],
                                 -1,
                             )
 
@@ -128,7 +117,7 @@ def read_chessboards(images, board, aruco_dict, verbose):
                                 ),
                                 cv.FONT_HERSHEY_SIMPLEX,
                                 2,
-                                colors_24[pts_idx],
+                                marker_colors[pts_idx],
                                 5,
                             )
 
@@ -199,15 +188,19 @@ def calibrate_camera(board, all_corners, all_ids, imsize, cam_name):
 
 
 def get_charuco_intrinsics(
-    cam_name, charuco_setup, images, output_folder, verbose=False
+    cam_name,
+    images,
+    charuco_setup,
+    output_path,
+    verbose,
 ):
     """
     args:
     charuco_setup: json file
     images: list of path to images
-    output_folder: path of folder to save results
+    output_path: path of folder to save results
 
-    charuco_setup fileds:
+    charuco_setup:
     "w", int: Number of squares in X direction
     "h", int:Number of squares in Y direction
     "square_side_length", float
@@ -218,19 +211,20 @@ def get_charuco_intrinsics(
         DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12, DICT_7X7_100=13,
         DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16
     """
-    charuco_config = utils.json_read(charuco_setup)
-    width = charuco_config["w"]
-    height = charuco_config["h"]
-    square_len = charuco_config["square_side_length"]
-    marker_len = charuco_config["marker_side_length"]
-    dict = charuco_config["dictionary"]
+    width = charuco_setup["w"]
+    height = charuco_setup["h"]
+    square_len = charuco_setup["square_side_length"]
+    marker_len = charuco_setup["marker_side_length"]
+    dict = charuco_setup["dictionary"]
 
     aruco_dict = cv.aruco.getPredefinedDictionary(dict)
     board_size = (width, height)
     board = cv.aruco.CharucoBoard(board_size, square_len, marker_len, aruco_dict)
 
+    number_of_markers = (width - 1) * (height - 1)
+
     all_corners, all_ids, imsize, objpoints, imgpoints, all_im_ids = read_chessboards(
-        images, board, aruco_dict, verbose
+        images, board, aruco_dict, number_of_markers, verbose
     )
     print(
         "==> Camera: {}, number of valid images {} in {} total images.".format(
@@ -244,7 +238,7 @@ def get_charuco_intrinsics(
             "ids": all_ids[i],
             "objpoints": objpoints[i],
         }
-    with open(output_folder + "/landmarks_{}.pkl".format(cam_name), "wb") as f:
+    with open(output_path + "/landmarks_{}.pkl".format(cam_name), "wb") as f:
         pickle.dump(landmark, f)
 
     (
@@ -273,9 +267,9 @@ def get_charuco_intrinsics(
         return reproj_error
 
     reproj_error = reprojection_error(mtx, dist, rvecs, tvecs)
-    print(
-        "RMS Reprojection Error: {}, Total Reprojection Error: {}".format(
-            ret, reproj_error
+    logging.info(
+        "{} RMS Reprojection Error: {}, Total Reprojection Error: {}".format(
+            cam_name, ret, reproj_error
         )
     )
 
@@ -288,19 +282,11 @@ def get_charuco_intrinsics(
         mtx, dist, newcameramtx, imsize, N=100, M=100
     )
     if not np.all(is_monotonic):
-        print("-" * 50)
-        print(
-            " The distortion function is not monotonous for alpha={:0.2f}!".format(
-                alpha
+        logging.info(
+            "{}: The distortion function is not monotonous for alpha={:0.2f}! To fix this we suggest sampling more precise points on the corner of the image first.  If this is not enough, use the option Rational Camera Model which more adpated to wider lenses. ".format(
+                cam_name, alpha
             )
         )
-        print(
-            " To fix this we suggest sampling more precise points on the corner of the image first."
-        )
-        print(
-            " If this is not enough, use the option Rational Camera Model which more adpated to wider lenses."
-        )
-        print("-" * 50)
 
     frame = cv.imread(images[0])
     plt.figure()
@@ -326,50 +312,71 @@ def get_charuco_intrinsics(
     plt.legend()
     plt.grid()
     plt.savefig(
-        os.path.join(output_folder, "monotonicity_{}.jpg".format(cam_name)),
+        os.path.join(output_path, "monotonicity_{}.jpg".format(cam_name)),
         bbox_inches="tight",
     )
+    plt.close()
 
-    output_file = os.path.join(output_folder, "{}.yaml".format(cam_name))
+    output_file = os.path.join(output_path, "{}.yaml".format(cam_name))
     utils.save_intrinsics_yaml(output_file, imsize[1], imsize[0], mtx, dist)
+    return mtx, dist, newcameramtx
 
 
-def main(root_folder):
-    config = utils.json_read(root_folder + "/config.json")
-    img_path = config["img_path"]
-    cam_names = config["cam_ordered"]
+parser = argparse.ArgumentParser()
+parser.add_argument("--root_folder", "-r", type=str, required=True)
+parser.add_argument("--verbose", "-v", action="store_true")
 
-    output_path = os.path.join(root_folder + "/output/intrinsics/")
-    utils.mkdir(output_path)
-    utils.config_logger(os.path.join(output_path, "intrinsics.log"))
+args = parser.parse_args()
 
-    images = []
-    for f in os.listdir(img_path):
-        if f.endswith(".tiff"):
-            images.append(f)
+root_folder = args.root_folder
+config = utils.json_read(root_folder + "/config.json")
+img_path = config["img_path"]
+cam_names = config["cam_ordered"]
+charuco_setup = config["charuco_setup"]
+output_path = os.path.join(root_folder + "/output/intrinsics/")
+if_serial = args.verbose
 
-    # cam_names = []
-    # for image in images:
-    #    cam_names.append(image.split("_")[0])
-    #    cam_names = sorted(np.unique(cam_names).tolist())
 
-    charuco_setup_file = os.path.join(root_folder, "charuco_setup.json")
-    for cam in cam_names:
-        images_per_cam = []
-        for image in images:
-            this_image_cam_name = image.split("_")[0]
-            if this_image_cam_name == cam:
-                images_per_cam.append(os.path.join(img_path, image))
+utils.mkdir(output_path)
+utils.config_logger(os.path.join(output_path, "intrinsics.log"))
+
+images = []
+for f in os.listdir(img_path):
+    if f.endswith(".tiff"):
+        images.append(f)
+
+images_all_cams = []
+for cam in cam_names:
+    images_per_cam = []
+    for image in images:
+        this_image_cam_name = image.split("_")[0]
+        if this_image_cam_name == cam:
+            images_per_cam.append(os.path.join(img_path, image))
+    images_all_cams.append(images_per_cam)
+
+if if_serial:
+    for idx, cam in enumerate(cam_names):
         get_charuco_intrinsics(
-            cam, charuco_setup_file, images_per_cam, output_path, False
+            cam, images_all_cams[idx], charuco_setup, output_path, True
         )
 
+else:
+    # parallel the process
+    num_workers = 8
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        partial_func = partial(
+            get_charuco_intrinsics,
+            charuco_setup=charuco_setup,
+            output_path=output_path,
+            verbose=False,
+        )
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--root_folder", "-r", type=str, required=True)
-    args = parser.parse_args()
-    main(**vars(args))
+        futures = [
+            executor.submit(partial_func, cam_name, images)
+            for cam_name, images in zip(cam_names, images_all_cams)
+        ]
 
-# "world_coordinate_img": "15_41_11_091"
-# "world_coordinate_img": "19_14_18_638"
+        for future in concurrent.futures.as_completed(futures):
+            pass  # We don't store results, just wait for completion
+
+    logging.info("All tasks completed.")
