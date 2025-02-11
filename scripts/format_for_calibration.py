@@ -17,21 +17,20 @@ cam_ordered = config["cam_ordered"]
 world_coordinate_img = config["world_coordinate_img"]
 first_view = config["first_view"]
 second_view_order = config["second_view_order"]
-charuco_setup_file = os.path.join(root_folder, "charuco_setup.json")
 
 minimal_tree = []
 for second_view_idx in second_view_order:
     minimal_tree.append([cam_ordered[first_view], cam_ordered[second_view_idx]])
 
 setup_dict = {"views": cam_ordered, "minimal_tree": minimal_tree}
-utils.json_write(root_folder + "/setup.json", setup_dict)
+utils.json_write(root_folder + "/output/setup.json", setup_dict)
 
 filenames = {}
 for cam in cam_ordered:
     filename = "_".join([cam, world_coordinate_img])
     filenames[cam] = os.path.join(img_path, filename + ".tiff")
 
-utils.json_write(root_folder + "/filenames.json", filenames)
+utils.json_write(root_folder + "/output/filenames.json", filenames)
 
 intrinsics = {}
 for cam in cam_ordered:
@@ -47,10 +46,10 @@ for cam in cam_ordered:
     intrinsics[cam] = intrinsics_per_cam_dict
 
 
-utils.json_write(root_folder + "/intrinsics.json", intrinsics)
+utils.json_write(root_folder + "/output/intrinsics.json", intrinsics)
 
 
-charuco_config = utils.json_read(charuco_setup_file)
+charuco_config = config["charuco_setup"]
 width = charuco_config["w"]
 height = charuco_config["h"]
 
@@ -117,7 +116,7 @@ for i, img_name in enumerate(unique_names):
 res, msg = verify_landmarks(landmarks_final)
 if not res:
     raise ValueError(msg)
-utils.json_write(root_folder + "/landmarks.json", landmarks_final)
+utils.json_write(root_folder + "/output/landmarks.json", landmarks_final)
 
 max_number_ids = 0
 cam_with_max_number_ids = next(iter(landmarks_global.keys()))
@@ -127,5 +126,6 @@ for cam, marker in landmarks_global.items():
         max_number_ids = len(marker["ids"])
 
 utils.json_write(
-    root_folder + "/landmarks_global.json", landmarks_global[cam_with_max_number_ids]
+    root_folder + "/output/landmarks_global.json",
+    landmarks_global[cam_with_max_number_ids],
 )
