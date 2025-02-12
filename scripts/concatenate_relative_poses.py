@@ -12,8 +12,7 @@ import os
 import warnings
 
 warnings.filterwarnings("ignore")
-
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 
 from multiview_calib import utils
 from multiview_calib.extrinsics import (
