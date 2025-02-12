@@ -14,7 +14,8 @@ root_folder = args.root_folder
 config = utils.json_read(root_folder + "/config.json")
 img_path = config["img_path"]
 cam_ordered = config["cam_ordered"]
-world_coordinate_img = config["world_coordinate_img"]
+visualize_img = config["visualize_img"]
+world_coordinate_imgs = config["world_coordinate_imgs"]
 first_view = config["first_view"]
 second_view_order = config["second_view_order"]
 
@@ -27,7 +28,7 @@ utils.json_write(root_folder + "/output/setup.json", setup_dict)
 
 filenames = {}
 for cam in cam_ordered:
-    filename = "_".join([cam, world_coordinate_img])
+    filename = "_".join([cam, visualize_img])
     filenames[cam] = os.path.join(img_path, filename + ".tiff")
 
 utils.json_write(root_folder + "/output/filenames.json", filenames)
@@ -80,10 +81,11 @@ for i, img_name in enumerate(unique_names):
             per_cam_ids = []
             per_cam_landmarks = []
             per_cam_global_ids = []
+            per_cam_global_marker_ids = []
 
             if img_name in landmarks[cam]:
+                img_name_id = img_name.split(".")[0]
                 marker_dict = landmarks[cam][img_name]
-
                 for j in range(len(marker_dict["ids"])):
                     point_unique_id = img_id * (width - 1) * (height - 1) + int(
                         marker_dict["ids"][j][0]
@@ -91,7 +93,8 @@ for i, img_name in enumerate(unique_names):
                     per_cam_ids.append(point_unique_id)
                     per_cam_landmarks.append(marker_dict["corners"][j][0].tolist())
 
-                    if img_name == world_coordinate_img + ".tiff":
+                    if img_name_id in world_coordinate_imgs:
+                        per_cam_global_marker_ids.append(int(marker_dict["ids"][j][0]))
                         per_cam_global_ids.append(point_unique_id)
 
                 if cam in landmarks_final.keys():
@@ -103,12 +106,13 @@ for i, img_name in enumerate(unique_names):
                         "landmarks": per_cam_landmarks,
                     }
 
-                if img_name == world_coordinate_img + ".tiff":
-                    landmarks_global[cam] = {
+                if img_name_id in world_coordinate_imgs:
+                    if img_name_id not in landmarks_global.keys():
+                        landmarks_global[img_name_id] = {}
+
+                    landmarks_global[img_name_id][cam] = {
                         "ids": per_cam_global_ids,
-                        "landmarks_global": np.squeeze(
-                            marker_dict["objpoints"]
-                        ).tolist(),
+                        "marker_ids": per_cam_global_marker_ids,
                     }
         img_id = img_id + 1
 
@@ -118,14 +122,20 @@ if not res:
     raise ValueError(msg)
 utils.json_write(root_folder + "/output/landmarks.json", landmarks_final)
 
-max_number_ids = 0
-cam_with_max_number_ids = next(iter(landmarks_global.keys()))
-for cam, marker in landmarks_global.items():
-    if len(marker["ids"]) > max_number_ids:
-        cam_with_max_number_ids = cam
-        max_number_ids = len(marker["ids"])
+landmarks_global_max_ids = {}
+for world_img in world_coordinate_imgs:
+    max_number_ids = 0
+    cam_with_max_number_ids = next(iter(landmarks_global.keys()))
+    for cam, marker in landmarks_global[world_img].items():
+        if len(marker["ids"]) > max_number_ids:
+            cam_with_max_number_ids = cam
+            max_number_ids = len(marker["ids"])
+    landmarks_global_max_ids[world_img] = landmarks_global[world_img][
+        cam_with_max_number_ids
+    ]
+breakpoint()
 
-utils.json_write(
-    root_folder + "/output/landmarks_global.json",
-    landmarks_global[cam_with_max_number_ids],
-)
+# utils.json_write(
+#    root_folder + "/output/landmarks_global.json",
+#    landmarks_global[cam_with_max_number_ids],
+# )

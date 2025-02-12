@@ -17,66 +17,51 @@ pip install .
 
 ## Usage
 
+This repo is adapated from https://github.com/cvlab-epfl/multiview_calib.
+
+We use charuco board for intrinsic parameters estimation, since it works better for bigger images. Make sure there is a config file. 
+
 ## Intrinsics estimation
-#### Compute intrinsic parameters:
-Print the following checkerboard and make sure the rectangles are 3x3cm. If they are not make sure to remove any configuration of the printer i.e. autofit
-https://markhedleyjones.com/storage/checkerboards/Checkerboard-A4-30mm-8x6.pdf
-
-The inner corner of the checkerboard are the calibration points.
-
-Take a video of the checkerboard. The objective is to acquire a set of images (30-200, 2min video) of the checkerboard from different viewpoints by making sure that the distribution of the calibration points covers the whole image, corner comprises!
-
-Extract the frames:
-```
-ffmpeg -i VIDEO -r 0.5 frames/frame_%04d.jpg
-```
+1. Compute intrinsic parameters:
 Run the following script:
 ```
-python compute_intrinsics.py --folder_images ./frames -ich 6 -icw 8 -s 30 -t 24 --debug
+python charuco_intrinsics.py -r ../examples/robot_02_11
 ```
 The script outputs several useful information for debugging purposes. One of them is the per keypoint reprojection error, another the monotonicity of the distortion function. If the distortion function is not monotonic, we suggest to sample more precise points on the corner of the image first. If this is not enought, try the Rational Model (-rm) instead. The Rational Model is a model of the lens that is more adapted to cameras with wider lenses.
 To furter understand if the calibration went well, you should perform a visual inspection of the undistorted images that have been saved. The lines in the images should be straight and the picture must look like a normal picture. In case of failure try to update Opencv or re-take the video/pictures.
 
 ## Extrinsics estimation
-#### Synchronization:
-In the case the phyiscal landmarks that you want to use to calibrate the camera are not static, you have to synchronize the cameras. We do this by extracting the frames from each one of the videos using the exact same frame rate (the higher the better), then, we look for a fast and recognizible event in the videos (like a hand clap) that allow us to remove the time offset in term of frame indexes from the sequences. Once the offset is removed you can then locate the landmarks in each sequence.
-
-To extract the frames:
-```
-ffmpeg -i VIDEO -vf "fps=30" frames/frame_%06d.jpg
-```
-It is a good idea to extarct the frame arround the native frame rate. Increasing the fps w.r.t the original fps would not make the synchornization more precise.
-
-#### Compute relative poses:
+2. Compute relative poses:
 To recover the pose of each one of the cameras in the rig w.r.t. the first camera we first compute relative poses between pairs of views and then concatenate them to form a tree. To do so, we have to manually define a minimal set of pairs of views that connect every camera. This is done in the file `setup.json`.
-```diff
+```
 -Note: do not pair cameras that are facing each other! Recovering proper geometry in this specifc case is difficult.
 ```
 The file named `landmarks.json` contains precise image points for each view that are used to compute fundamental matrices and poses. The file `ìntrinsics.json` contains the intrinsic parameters for each view that we have computed previously. The file `filenames.json` contains a filename of an image for each view which are is used for visualisation purposes.
 Check section `Input files` for more details on the file formats.
 
 ```
-python compute_relative_poses.py -s setup.json -i intrinsics.json -l landmarks.json -f filenames.json --dump_images 
+python compute_relative_poses.py -r ../examples/robot_02_11
 ```
 The result of this operation are relative poses up to scale (the translation vector is unit vector).
 
-The following command is an alternative. It computes the final relative pose from view1 to view2 as an average of relative poses computed using N other and different views.
+3. Format data 
 ```
-python compute_relative_poses_robust.py -s setup.json -i intrinsics.json -l landmarks.json -m lmeds -n 5 -f filenames.json --dump_images
+python format_for_calibration.py -r ../examples/robot_02_11
 ```
 
-#### Concatenate relative poses:
+4. Concatenate relative poses:
 In this step we concatenate/chain all the relative poses to obtain an approximation of the actual camera poses. The poses are defined w.r.t the first camera. At every concatenation we scale the current relative pose to match the scale of the previous ones. This to have roughly the same scale for each camera.
 The file `relative_poses.json` is the output of the previous step.
 ```
-python concatenate_relative_poses.py -s setup.json -r relative_poses.json --dump_images 
+python concatenate_relative_poses.py -r ../examples/robot_02_11
 ```
-#### Bundle adjustment:
+5. Bundle adjustment:
 Nonlinear Least squares refinement of intrinsic and extrinsic parameters and 3D points. The camera poses output of this step are up to scale.
 The file `poses.json` is the output of the previous step (Concatenate relative poses).
 ```
-python bundle_adjustment.py -s setup.json -i intrinsics.json -e poses.json -l landmarks.json -f filenames.json --dump_images -c ba_config.json 
+python bundle_adjustment.py -r ../examples/robot_02_11 
 ```
+
 #### Transformation to the global reference system:
 The poses and 3D points computed using the bundle adjustment are all w.r.t. the first camera and up to scale.
 In order to have the poses in the global/world reference system we have to estimate the rigid transformation between the two reference systems. To do so we perform a rigid allignement of the 3D points computed using bundle adjustment and their corresponding ones in global/world coordinate (at least 4 non-symmetric points). These must be defined in the file `landmarks_global.json` and have the same ID of the points defined in `landmarks.json`. Note that there is no need to specify the global coordinate for all landmarks defined in `landmarks.json`; a subset is enough. Given these correspondeces, the following command will find the best rigid transform in the least squares sense between the two point sets and then update the poses computed by the bundle adjustment. The output are the update poses saved in `global_poses.json`. NOTE: make sure the points used here are not symmetric nor close to be symmetric as this implies multiple solutions whcih is not handeled!
@@ -164,5 +149,4 @@ The file `ba_config.json` contains the configuration for the bundle adjustment. 
   "output_path": "output/bundle_adjustment/",
 }
 ```
-## License
 
