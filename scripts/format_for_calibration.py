@@ -18,6 +18,7 @@ visualize_img = config["visualize_img"]
 world_coordinate_imgs = config["world_coordinate_imgs"]
 first_view = config["first_view"]
 second_view_order = config["second_view_order"]
+gt_pts = config["gt_pts"]
 
 minimal_tree = []
 for second_view_idx in second_view_order:
@@ -133,9 +134,15 @@ for world_img in world_coordinate_imgs:
     landmarks_global_max_ids[world_img] = landmarks_global[world_img][
         cam_with_max_number_ids
     ]
-breakpoint()
 
-# utils.json_write(
-#    root_folder + "/output/landmarks_global.json",
-#    landmarks_global[cam_with_max_number_ids],
-# )
+landmarks_global_final = {"ids": [], "landmarks_global": []}
+for img, markers in landmarks_global_max_ids.items():
+    gt_per_img = gt_pts[img]
+    for idx, value in enumerate(markers["marker_ids"]):
+        landmarks_global_final["ids"].append(markers["ids"][idx])
+        landmarks_global_final["landmarks_global"].append(gt_per_img[value])
+
+utils.json_write(
+    root_folder + "/output/landmarks_global.json",
+    landmarks_global_final,
+)

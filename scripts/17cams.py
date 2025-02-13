@@ -36,6 +36,8 @@ def load_yaml_file(yaml_cam_name):
     cam_params = {}
     fs = cv2.FileStorage(yaml_cam_name, cv2.FILE_STORAGE_READ)
     if fs.isOpened():
+        cam_params["image_width"] = int(fs.getNode("image_width").real())
+        cam_params["image_height"] = int(fs.getNode("image_height").real())
         cam_params["camera_matrix"] = fs.getNode("camera_matrix").mat()
         cam_params["distortion_coefficients"] = fs.getNode(
             "distortion_coefficients"
@@ -52,8 +54,8 @@ rr.spawn()
 
 rr.set_time_sequence("stable_time", 0)
 rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Y_UP, static=True)
-rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[762, 762, 174.6]))
-rr.log("shelter", rr.Boxes3D(centers=[862, 0, -174.6], half_sizes=[100, 100, 174.6]))
+rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[914.4, 914.4, 174.6]))
+rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 174.6]))
 
 
 for serial, order in serial_to_order.items():
@@ -66,7 +68,7 @@ for serial, order in serial_to_order.items():
         rotation = cam_params["rc_ext"].T
         translation = -np.matmul(rotation, cam_params["tc_ext"][:, 0])
 
-        resolution = [3208, 2200]
+        resolution = [cam_params["image_width"], cam_params["image_height"]]
 
         # rr.log("world/camera/{}_{}".format(order, calib_date), rr.Transform3D(translation=translation, mat3x3=rotation))
         rr.log(
