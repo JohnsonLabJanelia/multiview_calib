@@ -66,87 +66,11 @@ python bundle_adjustment.py -r ../examples/robot_02_11
 The poses and 3D points computed using the bundle adjustment are all w.r.t. the first camera and up to scale.
 In order to have the poses in the global/world reference system we have to estimate the rigid transformation between the two reference systems. To do so we perform a rigid allignement of the 3D points computed using bundle adjustment and their corresponding ones in global/world coordinate (at least 4 non-symmetric points). These must be defined in the file `landmarks_global.json` and have the same ID of the points defined in `landmarks.json`. Note that there is no need to specify the global coordinate for all landmarks defined in `landmarks.json`; a subset is enough. Given these correspondeces, the following command will find the best rigid transform in the least squares sense between the two point sets and then update the poses computed by the bundle adjustment. The output are the update poses saved in `global_poses.json`. NOTE: make sure the points used here are not symmetric nor close to be symmetric as this implies multiple solutions whcih is not handeled!
 ```
-python global_registration.py -s setup.json -ps ba_poses.json -po ba_points.json -l landmarks.json -lg landmarks_global.json -f filenames.json --dump_images  
+python global_registration.py -r ../examples/robot_02_11
 ```
 If the global landmarks are a different set of points than the one used during the optimization, you can use the following command to compute the `ba_points.json`.
-```
-python triangulate_image_points.py -p ba_poses.json -l landmarks.json --dump_images
-```
-## Input files
-The file `setup.json` contains the name of the views and the minimal number of pairs of views that allows to connect all the cameras togheter. `minimal_tree` is a tree and is single component, therefore, it cannot for loops and all views are connected.
-```json
-{
- "views": [ "cam0", "cam1", "cam2", "cam3"], 
- "minimal_tree": [["cam0","cam1"], ["cam1","cam2"], ["cam3","cam0"]]
-}
-```
-The file `landmarks.json` contains the image points use to compute the poses. An image point is the projection of a landmark that exist in the physcal space. A unique ID is associated to each landmark. If the same landmark is visible in other views the same ID should be used. If the landmark is a moving object, make sure your cameras are synchronized and that you assign a different ID from frame to frame. Have a look at the examples if this is not clear enough. 
-```json
-{
- "cam0":{"landmarks": [[530.1256, 877.56], [2145.5564, 987.4574], ..., [1023, 126]],
-         "ids": [0, 1, ..., 3040]},
- ...
- "cam3":{"landmarks": [[430.1256, 377.56], [2245.5564, 387.4574], ..., [2223, 1726]], 
-         "ids": [1, 2, ..., 3040]}         
-}
-```
-The file `landmarks_global.json` contains 3D points defined in the "global" reference system. These defines the global location of all or a subset of the landmarks in the file `landmarks.json`. The IDs in this file must therefore allign with the IDs in the file `landmarks.json` but is not required that all landmarks have a global coordinate. The global points can be GPS coordinates in UTM+Altitude format or simply positions w.r.t. any other reference the you want. The global point can be noisy.
-```json
-{
- "landmarks_global": [[414278.16, 5316285.59, 5], [414278.16, 5316285.59, 5.5], ..., [414278.16, 5316285.59, 5.2]],
- "ids": [0, 1, ..., 3040]}       
-}
-```
-The file `intrinsics.json` contains the instrinsics parameters in the following format:
-```json
-{
- "cam0": { "K": [[1798.760123221333, 0.0, 1947.1889719803005], 
-                  [0.0, 1790.0624403935456, 1091.2910152343356],
-                  [ 0.0, 0.0, 1.0]],
-            "dist": [-0.22790810,0.0574260,0.00032600,-0.00047905,-0.0068488]},
- ...           
- "cam3": { "K": [[1778.560123221333, 0.0, 1887.1889719803005], 
-                  [0.0, 1780.0624403935456, 1081.2910152343356],
-                  [ 0.0, 0.0, 1.0]],
-            "dist": [-0.2390810,0.0554260,0.00031600,-0.00041905,-0.0062488]}
-}
-```
-The file `filenames.json` contains one filename for each view. It is used for visualisation purposes only:
-```json
-{
- "cam0": "somewhere/filename_cam0.jpg",
- ...           
- "cam3": "somewhere/filename_cam3.jpg",
-}
-```
-The file `ba_config.json` contains the configuration for the bundle adjustment. A typical configuration is the following:
-```json
-{
-  "each_training": 1
-  "each_visualisation": 1,
-  "th_outliers_early": 1000.0,
-  "th_outliers": 50,
-  "optimize_points": true,
-  "optimize_camera_params": true,
-  "bounds": true,  
-  "bounds_cp": [ 
-    0.3, 0.3, 0.3,
-    2, 2, 2,
-    10, 10, 10, 10,
-    0.01, 0.01, 0, 0, 0
-  ],
-  "bounds_pt": [
-    1000,
-    1000,
-    1000
-  ],
-  "max_nfev": 200,
-  "max_nfev2": 200,
-  "ftol": 1e-08,
-  "xtol": 1e-08,  
-  "loss": "linear",
-  "f_scale": 1,
-  "output_path": "output/bundle_adjustment/",
-}
-```
 
+#### Check final results
+```
+python 17cams.py -i ../examples/robot_02_11/output/global_registration/rig_space 
+```
