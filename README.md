@@ -62,7 +62,7 @@ python global_registration.py -r ../examples/robot_02_11
 ```
 If the global landmarks are a different set of points than the one used during the optimization, you can use the following command to compute the `ba_points.json`.
 
-#### Check final results
+## Visualize final results
 ```
 python 17cams.py -i ../examples/robot_02_11/output/global_registration/rig_space 
 ```
