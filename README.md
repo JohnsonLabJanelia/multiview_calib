@@ -1,14 +1,6 @@
 # Multiple view Camera calibration tool
 This tool allows to compute the intrinsic and extrinsic camera parameters of a set of synchronized cameras with overlapping field of view. The intrinsics estimation is based on the OpenCV's camera calibration framework and it is used on each camera separately. In the extrinsics estimation, an initial solution (extrinsic parameters) is computed first using a linear approach then refined using bundle adjustment.  The output are camera poses (intrinsic matrix, distortion parameters, rotations and translations) w.r.t. either the first camera or a global reference system.
 
-## Prerequisites
-
-- numpy
-- scipy
-- imageio
-- matplotlib
-- OpenCV
-
 ## Installation
 ```
 cd MULTIVIEW_CALIB_MASTER
@@ -62,7 +54,7 @@ The file `poses.json` is the output of the previous step (Concatenate relative p
 python bundle_adjustment.py -r ../examples/robot_02_11 
 ```
 
-#### Transformation to the global reference system:
+## Transformation to the global reference system:
 The poses and 3D points computed using the bundle adjustment are all w.r.t. the first camera and up to scale.
 In order to have the poses in the global/world reference system we have to estimate the rigid transformation between the two reference systems. To do so we perform a rigid allignement of the 3D points computed using bundle adjustment and their corresponding ones in global/world coordinate (at least 4 non-symmetric points). These must be defined in the file `landmarks_global.json` and have the same ID of the points defined in `landmarks.json`. Note that there is no need to specify the global coordinate for all landmarks defined in `landmarks.json`; a subset is enough. Given these correspondeces, the following command will find the best rigid transform in the least squares sense between the two point sets and then update the poses computed by the bundle adjustment. The output are the update poses saved in `global_poses.json`. NOTE: make sure the points used here are not symmetric nor close to be symmetric as this implies multiple solutions whcih is not handeled!
 ```
