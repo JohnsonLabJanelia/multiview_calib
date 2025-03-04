@@ -11,7 +11,7 @@ pip install .
 
 This repo is adapated from https://github.com/cvlab-epfl/multiview_calib.
 
-We use charuco board for intrinsic parameters estimation, since it works better for bigger images. Make sure there is a config file. 
+We use charuco board for intrinsic parameters estimation, since it works better for large images. 
 
 ## Intrinsics estimation
 1. Compute intrinsic parameters:
