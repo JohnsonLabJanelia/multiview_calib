@@ -1,0 +1,35 @@
+import os
+import json
+import cv2 as cv
+import numpy as np
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--root_folder", "-r", type=str, required=True)
+args = parser.parse_args()
+
+root_dir = "/Users/yanj11/data/rig17cams"
+global_poses_file = root_dir + "/output/global_registration/global_poses.json"
+global_poses = json_read(global_poses_file)
+
+output_dir = root_dir + "/output/rig_space"
+os.makedirs(output_dir, exist_ok=True)
+
+r_x_c_180 = np.asarray([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+r_z_c_90 = np.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+r_t = r_z_c_90 @ r_x_c_180
+
+for key, value in global_poses.items():
+    output_file = output_dir + "/Cam{}.yaml".format(key)
+
+    new_r = np.asarray(value["R"]) @ (r_t.T)
+    new_t = np.asarray(value["t"])
+
+    save_extrinsics_yaml(
+        output_file,
+        [3208, 2200],
+        np.asarray(value["K"]),
+        np.asarray(value["dist"]),
+        new_r,
+        new_t,
+    )
