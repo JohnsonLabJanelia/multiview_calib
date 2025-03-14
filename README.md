@@ -24,7 +24,13 @@ The script outputs several useful information for debugging purposes. One of the
 To furter understand if the calibration went well, you should perform a visual inspection of the undistorted images that have been saved. The lines in the images should be straight and the picture must look like a normal picture. In case of failure try to update Opencv or re-take the video/pictures.
 
 ### Extrinsics estimation
-2. Compute relative poses:
+
+2. Format data 
+```
+python format_for_calibration.py -r ../examples/robot_02_11
+```
+
+3. Compute relative poses:
 To recover the pose of each one of the cameras in the rig w.r.t. the first camera we first compute relative poses between pairs of views and then concatenate them to form a tree. To do so, we have to manually define a minimal set of pairs of views that connect every camera. This is done in the file `setup.json`.
 ```
 -Note: do not pair cameras that are facing each other! Recovering proper geometry in this specifc case is difficult.
@@ -35,12 +41,8 @@ Check section `Input files` for more details on the file formats.
 ```
 python compute_relative_poses.py -r ../examples/robot_02_11
 ```
-The result of this operation are relative poses up to scale (the translation vector is unit vector).
+../The result of this operation are relative poses up to scale (the translation vector is unit vector).
 
-3. Format data 
-```
-python format_for_calibration.py -r ../examples/robot_02_11
-```
 
 4. Concatenate relative poses:
 In this step we concatenate/chain all the relative poses to obtain an approximation of the actual camera poses. The poses are defined w.r.t the first camera. At every concatenation we scale the current relative pose to match the scale of the previous ones. This to have roughly the same scale for each camera.

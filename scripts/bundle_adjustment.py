@@ -425,7 +425,7 @@ def main(root_folder, iter1=200, iter2=200, dump_images=True):
                 plt.show()
                 plt.savefig(
                     os.path.join(
-                        ba_config["output_path"],
+                        output_path,
                         "optimized_residuals_outliers_removal.jpg",
                     ),
                     bbox_inches="tight",
