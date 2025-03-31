@@ -27,10 +27,12 @@ for second_view_idx in second_view_order:
 setup_dict = {"views": cam_ordered, "minimal_tree": minimal_tree}
 utils.json_write(root_folder + "/output/setup.json", setup_dict)
 
+_, extension = os.path.splitext(os.listdir(img_path)[0])
+
 filenames = {}
 for cam in cam_ordered:
     filename = "_".join([cam, visualize_img])
-    filenames[cam] = os.path.join(img_path, filename + ".tiff")
+    filenames[cam] = os.path.join(img_path, filename + extension)
 
 utils.json_write(root_folder + "/output/filenames.json", filenames)
 

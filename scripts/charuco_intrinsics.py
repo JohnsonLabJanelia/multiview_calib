@@ -45,8 +45,7 @@ def read_chessboards(images, board, aruco_dict, number_of_markers, verbose):
     frame_0 = cv.imread(images[0])
     imsize = frame_0.shape[:2]
     all_im_ids = []
-    num_points_thres = 10
-
+    num_points_thres = 6
     marker_colors = generate_distinct_colors(number_of_markers)
 
     for im in images:
@@ -336,14 +335,16 @@ charuco_setup = config["charuco_setup"]
 output_path = os.path.join(root_folder + "/output/intrinsics/")
 if_serial = args.verbose
 
-
 utils.mkdir(output_path)
 utils.config_logger(os.path.join(output_path, "intrinsics.log"))
 
 images = []
 for f in os.listdir(img_path):
-    if f.endswith(".tiff"):
+    _, extension = os.path.splitext(f)
+    if extension.lower() in [".jpg", ".jpeg", ".bmp", ".tiff", ".png", ".gif"]:
         images.append(f)
+if len(images) == 0:
+    logging.info("No images found.")
 
 images_all_cams = []
 for cam in cam_names:
@@ -359,10 +360,9 @@ if if_serial:
         get_charuco_intrinsics(
             cam, images_all_cams[idx], charuco_setup, output_path, True
         )
-
 else:
+    num_workers=17
     # parallel the process
-    num_workers = 8
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
         partial_func = partial(
             get_charuco_intrinsics,
