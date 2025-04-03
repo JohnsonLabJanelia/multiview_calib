@@ -2,14 +2,16 @@ import rerun as rr
 import numpy as np
 import argparse
 import cv2
+import os
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--calibration_dir", type=str, required=True)
+parser.add_argument("--config", "-c", type=str, required=True)
 args = parser.parse_args()
 
-
-calibration_dir = args.calibration_dir
+print(args.config)
+config_file = args.config
+calibration_dir = os.path.dirname(config_file)
 
 serial_to_order = {
     "2002496": 0,
@@ -60,7 +62,7 @@ rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 
 
 for serial, order in serial_to_order.items():
     ## load yaml file
-    yaml_file_name = calibration_dir + "/Cam{}.yaml".format(serial)
+    yaml_file_name = calibration_dir + "/calibration/Cam{}.yaml".format(serial)
     cam_params = load_yaml_file(yaml_file_name)
 
     if cam_params:

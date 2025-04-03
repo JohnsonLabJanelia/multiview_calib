@@ -322,13 +322,14 @@ def get_charuco_intrinsics(
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--root_folder", "-r", type=str, required=True)
+parser.add_argument("--config", "-c", type=str, required=True)
 parser.add_argument("--verbose", "-v", action="store_true")
 
 args = parser.parse_args()
 
-root_folder = args.root_folder
-config = utils.json_read(root_folder + "/config.json")
+config_file = args.config
+root_folder = os.path.dirname(config_file)
+config = utils.json_read(config_file)
 img_path = config["img_path"]
 cam_names = config["cam_ordered"]
 charuco_setup = config["charuco_setup"]
