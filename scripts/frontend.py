@@ -40,11 +40,12 @@ def check_success(script_name):
     return os.path.exists(success_marker)
 
 def run_selected_scripts(config_path, selections):
-    for label, script in scripts:
+    script_items = list(scripts)
+    for i, (label, script) in enumerate(script_items):
         if not selections[script].get():
             continue
 
-        log(f"🔄 Running {label} ({script}) with: -c {config_path}")
+        log(f"🔄 Running {label} ({script}) with: -r {config_path}")
         try:
             process = subprocess.Popen(
                 ["python", "-u", script, "-c", config_path],
@@ -71,11 +72,19 @@ def run_selected_scripts(config_path, selections):
 
             log(f"✅ {label} completed successfully.\n")
 
+            # ✅ Move selection to the next script
+            selections[script].set(False)
+            if i + 1 < len(script_items):
+                next_script = script_items[i + 1][1]
+                selections[next_script].set(True)
+
+            return  # ⛔ Stop after one script to allow step-by-step flow
+
         except Exception as e:
             log(f"❌ Error running {label}: {e}")
             return
 
-    log("🎉 All selected scripts completed successfully.")
+    log("✅ No more scripts selected.")
 
 
 def start_run():
