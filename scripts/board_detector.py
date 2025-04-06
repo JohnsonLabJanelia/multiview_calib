@@ -11,7 +11,8 @@ def generate_distinct_colors(n):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--image", required=True, type=str)
-
+parser.add_argument("--width", required=True, type=int)
+parser.add_argument("--height", required=True, type=int)
 args = parser.parse_args()
 
 frame = cv2.imread(args.image)
@@ -32,7 +33,7 @@ key = cv2.waitKey(0)
 dictionary = cv2.aruco.DICT_4X4_50
 aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
 num_points_thres = 6
-board_size = (4, 3)
+board_size = (args.width, args.height)
 board = cv2.aruco.CharucoBoard(board_size, 60, 45, aruco_dict)
 charuco_detector = cv2.aruco.CharucoDetector(board)
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, 0.00001)
