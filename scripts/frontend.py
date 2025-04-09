@@ -45,7 +45,7 @@ def run_selected_scripts(config_path, selections):
         if not selections[script].get():
             continue
 
-        log(f"🔄 Running {label} ({script}) with: -r {config_path}")
+        log(f"Running {label} ({script}) with: -c {config_path}")
         try:
             process = subprocess.Popen(
                 ["python", "-u", script, "-c", config_path],
@@ -63,36 +63,36 @@ def run_selected_scripts(config_path, selections):
 
             exit_code = process.poll()
             if exit_code != 0:
-                log(f"❌ {label} failed with exit code {exit_code}. Stopping.")
+                log(f"{label} failed with exit code {exit_code}. Stopping.")
                 return
 
             # if not check_success(script):
             #     log(f"⚠️ {label} did not produce expected output. Stopping.")
             #     return
 
-            log(f"✅ {label} completed successfully.\n")
+            log(f"{label} completed successfully.\n")
 
-            # ✅ Move selection to the next script
+            # Move selection to the next script
             selections[script].set(False)
             if i + 1 < len(script_items):
                 next_script = script_items[i + 1][1]
                 selections[next_script].set(True)
 
-            return  # ⛔ Stop after one script to allow step-by-step flow
+            return  # Stop after one script to allow step-by-step flow
 
         except Exception as e:
-            log(f"❌ Error running {label}: {e}")
+            log(f"Error running {label}: {e}")
             return
 
-    log("✅ No more scripts selected.")
+    log("No more scripts selected.")
 
 
 def start_run():
     config_path = config_var.get()
     if not config_path:
-        log("⚠️ Please select a config file first.")
+        log("Please select a config file first.")
         return
-    log("🚀 Starting script sequence...\n")
+    log("Starting script sequence...\n")
     threading.Thread(target=run_selected_scripts, args=(config_path, selections), daemon=True).start()
 
 # --- GUI Layout ---

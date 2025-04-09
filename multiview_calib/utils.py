@@ -122,7 +122,7 @@ def find_files(file_or_folder, hint=None, recursive=False):
 
 
 def find_images(file_or_folder, hint=None):
-        filenames = find_files(file_or_folder, hint)
+    filenames = find_files(file_or_folder, hint)
     filename_images = []
     for filename in filenames:
         _, extension = os.path.splitext(filename)
