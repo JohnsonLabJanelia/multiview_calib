@@ -14,7 +14,7 @@ scripts = [
     ("4. concatenate_relative_poses", "concatenate_relative_poses.py"),
     ("5. bundle_adjustment", "bundle_adjustment.py"),
     ("6. global_registration", "global_registration.py"),
-    ("7. visualize", "17cams.py"),
+    ("7. visualize", "visualize.py"),
 ]
 
 #default_config_dir = os.path.join(os.path.dirname(__file__), "configs")
