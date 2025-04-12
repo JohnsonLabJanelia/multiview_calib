@@ -15,7 +15,7 @@ source calib/bin/activate
 
 ```
 cd MULTIVIEW_CALIB_MASTER
-uv pip install .
+uv pip install -e .
 uv pip install opencv-python
 uv pip install opencv-contrib-python
 uv pip install networkx
@@ -30,7 +30,7 @@ We use charuco board for intrinsic parameters estimation, since it works better 
 
 Assuming we are using this config file, 
 ```
-export calib_config/nfs/exports/ratlv/calibration/2025_03_24/config.json
+export calib_config=/nfs/exports/ratlv/calibration/2025_03_24/config.json
 ```
 A example config.json file is in the the config folder. 
 

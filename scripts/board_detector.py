@@ -31,6 +31,7 @@ cv2.imshow("thresh", image_resize_thresh)
 key = cv2.waitKey(0)
 
 dictionary = cv2.aruco.DICT_4X4_50
+print(dictionary)
 aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
 num_points_thres = 6
 board_size = (args.width, args.height)
@@ -82,6 +83,8 @@ if (len(corners) >= num_points_thres):
         obj_points, img_points = board.matchImagePoints(
             charuco_corners, charuco_ids
         )
+        print(obj_points.shape)
+        print(obj_points)
 
         # SUB PIXEL DETECTION
         for corner in corners:

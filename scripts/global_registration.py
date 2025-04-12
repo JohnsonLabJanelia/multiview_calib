@@ -41,7 +41,6 @@ def main(
     global_poses, global_triang_points = global_registration(
         ba_poses, ba_points, landmarks_global
     )
-
     if dump_images:
         filenames = utils.json_read(root_folder + "/output/filenames.json")
         visualise_global_registration(

@@ -34,7 +34,7 @@ def load_yaml_file(yaml_cam_name):
         return False
 
 
-rr.init("rerun_example_dna_abacus")
+rr.init("calibration")
 rr.spawn()
 
 rr.set_time_sequence("stable_time", 0)
@@ -42,6 +42,9 @@ rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Y_UP, static=True)
 if (len(cam_ordered)==17):
     rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[914.4, 914.4, 174.6]))
     rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 174.6]))
+else:
+    rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[1200, 1200, 174.6]))
+
 
 
 for order, serial in enumerate(cam_ordered):

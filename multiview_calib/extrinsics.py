@@ -646,7 +646,6 @@ def visualise_global_registration(
     output_path="output/global_registration",
 ):
     import matplotlib.pyplot as plt
-
     utils.mkdir(output_path)
 
     def plot(points3d, calib):
@@ -654,13 +653,12 @@ def visualise_global_registration(
         tvec = np.array(calib["t"])
         K = np.array(calib["K"])
         dist = np.array(calib["dist"])
-
         return cv2.projectPoints(points3d, rvec, tvec, K, dist)[0].reshape(-1, 2)
 
     for view, calib in global_poses.items():
         img = imageio.imread(filenames[view].format(view))
-
-        proj_glob = plot(np.array(landmarks_global["landmarks_global"]), calib)
+        
+        proj_glob = plot(np.array(landmarks_global["landmarks_global"], dtype=float), calib)
         proj_ba = plot(np.array(ba_points["points_3d"]), ba_poses[view])
 
         plt.figure(figsize=(14, 8))
