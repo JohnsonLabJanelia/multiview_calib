@@ -14,6 +14,7 @@ print(args.config)
 config_file = args.config
 calibration_dir = os.path.dirname(config_file)
 config = utils.json_read(config_file)
+gt_pts = config["gt_pts"]
 
 cam_ordered = config["cam_ordered"]
 
@@ -43,9 +44,8 @@ if (len(cam_ordered)==17):
     rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[914.4, 914.4, 174.6]))
     rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 174.6]))
 else:
-    rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[1200, 1200, 174.6]))
-
-
+    for key, value in gt_pts.items():
+        rr.log(key, rr.Points3D(value))
 
 for order, serial in enumerate(cam_ordered):
     ## load yaml file
