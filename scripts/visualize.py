@@ -2,35 +2,20 @@ import rerun as rr
 import numpy as np
 import argparse
 import cv2
+import os
+from multiview_calib import utils
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--calibration_dir", type=str, required=True)
+parser.add_argument("--config", "-c", type=str, required=True)
 args = parser.parse_args()
 
+print(args.config)
+config_file = args.config
+calibration_dir = os.path.dirname(config_file)
+config = utils.json_read(config_file)
 
-calibration_dir = args.calibration_dir
-
-serial_to_order = {
-    "2002496": 0,
-    "2002483": 1,
-    "2002488": 2,
-    "2002480": 3,
-    "2002489": 4,
-    "2002485": 5,
-    "2002490": 6,
-    "2002492": 7,
-    "2002479": 8,
-    "2002494": 9,
-    "2002495": 10,
-    "2002482": 11,
-    "2002481": 12,
-    "2002491": 13,
-    "2002493": 14,
-    "2002484": 15,
-    "710038": 16,
-}
-
+cam_ordered = config["cam_ordered"]
 
 def load_yaml_file(yaml_cam_name):
     cam_params = {}
@@ -54,13 +39,14 @@ rr.spawn()
 
 rr.set_time_sequence("stable_time", 0)
 rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Y_UP, static=True)
-rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[914.4, 914.4, 174.6]))
-rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 174.6]))
+if (len(cam_ordered)==17):
+    rr.log("arena", rr.Boxes3D(centers=[0, 0, -174.6], half_sizes=[914.4, 914.4, 174.6]))
+    rr.log("shelter", rr.Boxes3D(centers=[1014.4, 0, -174.6], half_sizes=[100, 100, 174.6]))
 
 
-for serial, order in serial_to_order.items():
+for order, serial in enumerate(cam_ordered):
     ## load yaml file
-    yaml_file_name = calibration_dir + "/Cam{}.yaml".format(serial)
+    yaml_file_name = calibration_dir + "/calibration/Cam{}.yaml".format(serial)
     cam_params = load_yaml_file(yaml_file_name)
 
     if cam_params:
@@ -72,13 +58,13 @@ for serial, order in serial_to_order.items():
 
         # rr.log("world/camera/{}_{}".format(order, calib_date), rr.Transform3D(translation=translation, mat3x3=rotation))
         rr.log(
-            "world/camera/{}".format(order),
+            "world/camera/{}_{}".format(serial, order),
             rr.Transform3D(translation=translation, mat3x3=rotation),
         )
 
         rr.log(
             # "world/camera/{}_{}".format(order, calib_date),
-            "world/camera/{}".format(order),
+            "world/camera/{}_{}".format(serial, order),
             rr.Pinhole(
                 resolution=resolution,
                 image_from_camera=cam_params["camera_matrix"],

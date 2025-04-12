@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 def main(
-    root_folder,
+    config,
     dump_images=True,
 ):
+    root_folder = os.path.dirname(config)
     output_path = root_folder + "/output/global_registration"
     utils.mkdir(output_path)
     utils.config_logger(os.path.join(output_path, "global_registration.log"))
@@ -81,7 +82,7 @@ def main(
     r_z_c_90 = np.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r_t = r_z_c_90 @ r_x_c_180
 
-    rig_space_path = output_path + "/rig_space"
+    rig_space_path = root_folder + "/calibration"
     utils.mkdir(rig_space_path)
     for key, value in global_poses.items():
         output_file = rig_space_path + "/Cam{}.yaml".format(key)
@@ -101,11 +102,12 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root_folder", "-r", type=str, required=True)
+    parser.add_argument("--config", "-c", type=str, required=True)
+
     parser.add_argument(
         "--dump_images",
         "-d",
-        default=False,
+        default=True,
         const=True,
         action="store_const",
         help="Saves images for visualisation",

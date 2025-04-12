@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--root_folder", "-r", type=str, required=True)
+parser.add_argument("--config", "-c", type=str, required=True)
 parser.add_argument(
     "--method",
     "-m",
@@ -33,13 +33,14 @@ parser.add_argument(
 parser.add_argument(
     "--dump_images",
     "-d",
-    default=False,
+    default=True,
     const=True,
     action="store_const",
     help="Saves images for visualisation",
 )
 args = parser.parse_args()
-root_folder = args.root_folder
+config_file = args.config
+root_folder = os.path.dirname(config_file)
 dump_images = args.dump_images
 method = args.method
 output_path = root_folder + "/output/relative_poses/"

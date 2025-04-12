@@ -6,12 +6,13 @@ import pickle
 from multiview_calib.extrinsics import verify_landmarks
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-root_folder", "-r", type=str, required=True)
+parser.add_argument("--config", "-c", type=str, required=True)
 
 args = parser.parse_args()
-root_folder = args.root_folder
 
-config = utils.json_read(root_folder + "/config.json")
+config_file = args.config
+root_folder = os.path.dirname(config_file)
+config = utils.json_read(config_file)
 img_path = config["img_path"]
 cam_ordered = config["cam_ordered"]
 visualize_img = config["visualize_img"]
@@ -27,10 +28,12 @@ for second_view_idx in second_view_order:
 setup_dict = {"views": cam_ordered, "minimal_tree": minimal_tree}
 utils.json_write(root_folder + "/output/setup.json", setup_dict)
 
+_, extension = os.path.splitext(os.listdir(img_path)[0])
+
 filenames = {}
 for cam in cam_ordered:
     filename = "_".join([cam, visualize_img])
-    filenames[cam] = os.path.join(img_path, filename + ".tiff")
+    filenames[cam] = os.path.join(img_path, filename + extension)
 
 utils.json_write(root_folder + "/output/filenames.json", filenames)
 

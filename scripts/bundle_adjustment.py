@@ -47,13 +47,15 @@ ba_config = {
 """
 
 
-def main(root_folder, iter1=200, iter2=200, dump_images=True):
-    config = utils.json_read(root_folder + "/config.json")
-    ba_config = config["ba_config"]
+def main(config, iter1=200, iter2=200, dump_images=True):
+    config_json = utils.json_read(config)
+    ba_config = config_json["ba_config"]
     if iter1 is not None:
         ba_config["max_nfev"] = iter1
     if iter2 is not None:
         ba_config["max_nfev2"] = iter2
+
+    root_folder = os.path.dirname(config)
 
     output_path = root_folder + "/output/bundle_adjustment"
     utils.mkdir(output_path)
@@ -509,12 +511,12 @@ def main(root_folder, iter1=200, iter2=200, dump_images=True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root_folder", "-r", type=str, required=True)
+    parser.add_argument("--config", "-c", type=str, required=True)
 
     parser.add_argument(
         "--dump_images",
         "-d",
-        default=True,
+        default=False,
         const=True,
         action="store_const",
         help="Saves images for visualisation",
