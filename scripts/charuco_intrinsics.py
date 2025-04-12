@@ -61,6 +61,7 @@ def read_chessboards(images, board, aruco_dict, number_of_markers, verbose):
                 charuco_detector.detectBoard(frame)
             )
 
+            breakpoint()
             if charuco_corners is not None and charuco_ids is not None:
                 obj_points, img_points = board.matchImagePoints(
                     charuco_corners, charuco_ids
@@ -214,9 +215,9 @@ def get_charuco_intrinsics(
     square_len = charuco_setup["square_side_length"]
     marker_len = charuco_setup["marker_side_length"]
     dict = charuco_setup["dictionary"]
-
     aruco_dict = cv.aruco.getPredefinedDictionary(dict)
     board_size = (width, height)
+    breakpoint()
     board = cv.aruco.CharucoBoard(board_size, square_len, marker_len, aruco_dict)
 
     number_of_markers = (width - 1) * (height - 1)
@@ -239,86 +240,88 @@ def get_charuco_intrinsics(
     with open(output_path + "/landmarks_{}.pkl".format(cam_name), "wb") as f:
         pickle.dump(landmark, f)
 
-    if len(all_im_ids) > 0:
-        (
-            ret,
-            mtx,
-            dist,
-            rvecs,
-            tvecs,
-            std_dev_intrisics,
-            std_dev_extrinsics,
-            per_view_errors,
-        ) = calibrate_camera(board, all_corners, all_ids, imsize, cam_name)
+    if not verbose:
 
-        # add metrics
-        def reprojection_error(mtx, distCoeffs, rvecs, tvecs):
-            # print reprojection error
-            reproj_error = 0
-            for i in range(len(objpoints)):
-                imgpoints2, _ = cv.projectPoints(
-                    objpoints[i], rvecs[i], tvecs[i], mtx, distCoeffs
-                )
-                reproj_error += cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2) / len(
-                    imgpoints2
-                )
-            reproj_error /= len(objpoints)
-            return reproj_error
+        if len(all_im_ids) > 0:
+            (
+                ret,
+                mtx,
+                dist,
+                rvecs,
+                tvecs,
+                std_dev_intrisics,
+                std_dev_extrinsics,
+                per_view_errors,
+            ) = calibrate_camera(board, all_corners, all_ids, imsize, cam_name)
 
-        reproj_error = reprojection_error(mtx, dist, rvecs, tvecs)
-        logging.info(
-            "{} RMS Reprojection Error: {}, Total Reprojection Error: {}".format(
-                cam_name, ret, reproj_error
-            )
-        )
+            # add metrics
+            def reprojection_error(mtx, distCoeffs, rvecs, tvecs):
+                # print reprojection error
+                reproj_error = 0
+                for i in range(len(objpoints)):
+                    imgpoints2, _ = cv.projectPoints(
+                        objpoints[i], rvecs[i], tvecs[i], mtx, distCoeffs
+                    )
+                    reproj_error += cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2) / len(
+                        imgpoints2
+                    )
+                reproj_error /= len(objpoints)
+                return reproj_error
 
-        alpha = 0.95
-        newcameramtx, roi = cv.getOptimalNewCameraMatrix(
-            mtx, dist, imsize, alpha, imsize, centerPrincipalPoint=False
-        )
-
-        grid_norm, is_monotonic = probe_monotonicity(
-            mtx, dist, newcameramtx, imsize, N=100, M=100
-        )
-        if not np.all(is_monotonic):
+            reproj_error = reprojection_error(mtx, dist, rvecs, tvecs)
             logging.info(
-                "{}: The distortion function is not monotonous for alpha={:0.2f}! To fix this we suggest sampling more precise points on the corner of the image first.  If this is not enough, use the option Rational Camera Model which more adpated to wider lenses. ".format(
-                    cam_name, alpha
+                "{} RMS Reprojection Error: {}, Total Reprojection Error: {}".format(
+                    cam_name, ret, reproj_error
                 )
             )
 
-        frame = cv.imread(images[0])
-        plt.figure()
-        plt.imshow(cv.undistort(frame, mtx, dist, None, newcameramtx))
-        grid = (
-            grid_norm * newcameramtx[[0, 1], [0, 1]][None]
-            + newcameramtx[[0, 1], [2, 2]][None]
-        )
-        plt.plot(
-            grid[is_monotonic, 0],
-            grid[is_monotonic, 1],
-            ".g",
-            label="monotonic",
-            markersize=1.5,
-        )
-        plt.plot(
-            grid[~is_monotonic, 0],
-            grid[~is_monotonic, 1],
-            ".r",
-            label="not monotonic",
-            markersize=1.5,
-        )
-        plt.legend()
-        plt.grid()
-        plt.savefig(
-            os.path.join(output_path, "monotonicity_{}.jpg".format(cam_name)),
-            bbox_inches="tight",
-        )
-        plt.close()
+            alpha = 0.95
+            newcameramtx, roi = cv.getOptimalNewCameraMatrix(
+                mtx, dist, imsize, alpha, imsize, centerPrincipalPoint=False
+            )
 
-        output_file = os.path.join(output_path, "{}.yaml".format(cam_name))
-        utils.save_intrinsics_yaml(output_file, imsize[1], imsize[0], mtx, dist)
-        return mtx, dist, newcameramtx
+            grid_norm, is_monotonic = probe_monotonicity(
+                mtx, dist, newcameramtx, imsize, N=100, M=100
+            )
+            if not np.all(is_monotonic):
+                logging.info(
+                    "{}: The distortion function is not monotonous for alpha={:0.2f}! To fix this we suggest sampling more precise points on the corner of the image first.  If this is not enough, use the option Rational Camera Model which more adpated to wider lenses. ".format(
+                        cam_name, alpha
+                    )
+                )
+
+            frame = cv.imread(images[0])
+            plt.figure()
+            plt.imshow(cv.undistort(frame, mtx, dist, None, newcameramtx))
+            grid = (
+                grid_norm * newcameramtx[[0, 1], [0, 1]][None]
+                + newcameramtx[[0, 1], [2, 2]][None]
+            )
+            plt.plot(
+                grid[is_monotonic, 0],
+                grid[is_monotonic, 1],
+                ".g",
+                label="monotonic",
+                markersize=1.5,
+            )
+            plt.plot(
+                grid[~is_monotonic, 0],
+                grid[~is_monotonic, 1],
+                ".r",
+                label="not monotonic",
+                markersize=1.5,
+            )
+            plt.legend()
+            plt.grid()
+            plt.savefig(
+                os.path.join(output_path, "monotonicity_{}.jpg".format(cam_name)),
+                bbox_inches="tight",
+            )
+            plt.close()
+
+            output_file = os.path.join(output_path, "{}.yaml".format(cam_name))
+            utils.save_intrinsics_yaml(output_file, imsize[1], imsize[0], mtx, dist)
+            return mtx, dist, newcameramtx
 
 
 parser = argparse.ArgumentParser()
