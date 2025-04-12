@@ -61,7 +61,6 @@ def read_chessboards(images, board, aruco_dict, number_of_markers, verbose):
                 charuco_detector.detectBoard(frame)
             )
 
-            breakpoint()
             if charuco_corners is not None and charuco_ids is not None:
                 obj_points, img_points = board.matchImagePoints(
                     charuco_corners, charuco_ids
@@ -95,7 +94,6 @@ def read_chessboards(images, board, aruco_dict, number_of_markers, verbose):
                         image_copy = np.copy(frame)
 
                         for pts_idx in range(res2[1].shape[0]):
-                            # breakpoint()
                             cv.circle(
                                 image_copy,
                                 (
@@ -217,7 +215,6 @@ def get_charuco_intrinsics(
     dict = charuco_setup["dictionary"]
     aruco_dict = cv.aruco.getPredefinedDictionary(dict)
     board_size = (width, height)
-    breakpoint()
     board = cv.aruco.CharucoBoard(board_size, square_len, marker_len, aruco_dict)
 
     number_of_markers = (width - 1) * (height - 1)
