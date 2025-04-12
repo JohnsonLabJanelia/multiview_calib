@@ -83,15 +83,19 @@ def main(
 
     rig_space_path = root_folder + "/calibration"
     utils.mkdir(rig_space_path)
+
     for key, value in global_poses.items():
         output_file = rig_space_path + "/Cam{}.yaml".format(key)
 
         new_r = np.asarray(value["R"]) @ (r_t.T)
         new_t = np.asarray(value["t"])
 
+        cam_img = cv2.imread(filenames[key])
+        h, w, _ = cam_img.shape
+
         utils.save_extrinsics_yaml(
             output_file,
-            [3208, 2200],
+            [w, h],
             np.asarray(value["K"]),
             np.asarray(value["dist"]),
             new_r,
