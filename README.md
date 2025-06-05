@@ -8,8 +8,7 @@ This tool allows to compute the intrinsic and extrinsic camera parameters of a s
 Use uv to manage virtual environment 
 ```
 uv venv
-uv venv calib
-source calib/bin/activate
+source .venv/bin/activate
 ```
 
 
