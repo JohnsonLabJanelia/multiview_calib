@@ -4,8 +4,8 @@ This repo is adapated from https://github.com/cvlab-epfl/multiview_calib.
 
 This tool allows to compute the intrinsic and extrinsic camera parameters of a set of synchronized cameras with overlapping field of view. The intrinsics estimation is based on the OpenCV's camera calibration framework and it is used on each camera separately. In the extrinsics estimation, an initial solution (extrinsic parameters) is computed first using a linear approach then refined using bundle adjustment.  The output are camera poses (intrinsic matrix, distortion parameters, rotations and translations) w.r.t. either the first camera or a global reference system.
 
-## Installation
-### Clone the repo
+# Installation
+## Clone the repo
 ```
 git clone https://github.com/JohnsonLabJanelia/multiview_calib.git
 ```
@@ -29,9 +29,23 @@ uv pip install rerun-sdk
 ```
 
 
-## Usage
+# Usage
 
 We use charuco board for intrinsic parameters estimation, since it works better for large images. 
+
+## Create config.json file 
+Create a config.json file similar to this [example](https://github.com/JohnsonLabJanelia/multiview_calib/blob/master/config/config.json). 
+
+
+### Use the simple GUI 
+```
+cd scripts
+python frontend.py
+```
+
+Alternatively, you can run the steps manually like below. It explains what each step do. 
+
+### Manual steps
 
 Assuming we are using this config file, 
 ```
