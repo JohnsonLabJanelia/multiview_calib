@@ -43,7 +43,7 @@ cd scripts
 python frontend.py
 ```
 
-Alternatively, you can run the steps manually like below. It explains what each step do. 
+Alternatively, you can run the steps manually like below, and here is what each each step does. 
 
 ### Manual steps
 
