@@ -10,7 +10,7 @@ This tool allows to compute the intrinsic and extrinsic camera parameters of a s
 git clone https://github.com/JohnsonLabJanelia/multiview_calib.git
 ```
 
-Inside the cloned folder `multiview_calib`, use uv to manage virtual environment, to create a uv environment  
+Inside the cloned folder `multiview_calib`, use [uv](https://docs.astral.sh/uv/getting-started/) to manage virtual environment, to create a uv environment  
 ```
 uv venv
 ```
