@@ -105,5 +105,5 @@ python global_registration.py -c $calib_config
 
 ### Visualize final results
 ```
-python 17cams.py -i $path_to_config_file/calibration 
+python visualize.py -i $path_to_config_file/calibration 
 ```
