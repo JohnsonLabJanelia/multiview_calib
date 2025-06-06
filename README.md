@@ -55,7 +55,6 @@ A example config.json file is in the the config folder.
 
 ### Intrinsics estimation
 1. Compute intrinsic parameters:
-Run the following script:
 ```
 python charuco_intrinsics.py -c $calib_config
 ```
@@ -71,16 +70,16 @@ python format_for_calibration.py -c $calib_config
 
 3. Compute relative poses:
 To recover the pose of each one of the cameras in the rig w.r.t. the first camera we first compute relative poses between pairs of views and then concatenate them to form a tree. To do so, we have to manually define a minimal set of pairs of views that connect every camera. This is done in the file `setup.json`.
-```
--Note: do not pair cameras that are facing each other! Recovering proper geometry in this specifc case is difficult.
-```
+
+**Note: do not pair cameras that are facing each other! Recovering proper geometry in this specifc case is difficult.**
+
 The file named `landmarks.json` contains precise image points for each view that are used to compute fundamental matrices and poses. The file `ìntrinsics.json` contains the intrinsic parameters for each view that we have computed previously. The file `filenames.json` contains a filename of an image for each view which are is used for visualisation purposes.
 Check section `Input files` for more details on the file formats.
 
 ```
 python compute_relative_poses.py -c $calib_config
 ```
-../The result of this operation are relative poses up to scale (the translation vector is unit vector).
+The result of this operation are relative poses up to scale (the translation vector is unit vector).
 
 
 4. Concatenate relative poses:
