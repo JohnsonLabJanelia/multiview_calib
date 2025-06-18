@@ -13,6 +13,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--image", required=True, type=str)
 parser.add_argument("--width", required=True, type=int)
 parser.add_argument("--height", required=True, type=int)
+parser.add_argument("-sl", "--square_length", required=True, type=float)
+parser.add_argument("-ml", "--marker_length", required=True, type=float)
+parser.add_argument("-d","--dict", required=True, type=int)
+
+"""
+    "dictionary",int:
+        dictionary: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,  DICT_4X4_1000=3,
+        DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7, DICT_6X6_50=8,
+        DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12, DICT_7X7_100=13,
+        DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16
+"""
+
 args = parser.parse_args()
 
 frame = cv2.imread(args.image)
@@ -30,12 +42,11 @@ image_resize_thresh = cv2.resize(img_thresh, (1604, 1100))
 cv2.imshow("thresh", image_resize_thresh)
 key = cv2.waitKey(0)
 
-dictionary = cv2.aruco.DICT_4X4_50
-print(dictionary)
+dictionary = args.dict
 aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
 num_points_thres = 6
 board_size = (args.width, args.height)
-board = cv2.aruco.CharucoBoard(board_size, 60, 45, aruco_dict)
+board = cv2.aruco.CharucoBoard(board_size, args.square_length, args.marker_length, aruco_dict)
 charuco_detector = cv2.aruco.CharucoDetector(board)
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, 0.00001)
 number_of_markers = board_size[0] * board_size[1]
@@ -44,6 +55,7 @@ marker_colors = generate_distinct_colors(number_of_markers)
 frame_detect = gray.copy()
 corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(frame_detect, aruco_dict)
 print("Length of markers detected {}".format(len(corners)))
+
 if (len(corners) >= num_points_thres):
     # flatten the ArUco IDs list
     ids = ids.flatten()
