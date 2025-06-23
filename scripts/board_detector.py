@@ -97,7 +97,7 @@ if (len(corners) >= num_points_thres):
         )
         print(obj_points.shape)
         print(obj_points)
-
+        print(img_points)
         # SUB PIXEL DETECTION
         for corner in corners:
             cv2.cornerSubPix(
