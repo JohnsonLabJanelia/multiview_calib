@@ -4,6 +4,7 @@ import argparse
 import cv2
 import os
 from multiview_calib import utils
+import rerun.blueprint as rrb
 
 
 parser = argparse.ArgumentParser()
@@ -35,9 +36,18 @@ def load_yaml_file(yaml_cam_name):
         return False
 
 
-rr.init("calibration")
-rr.spawn()
+rr.init("Calibration", spawn=True)
 
+blueprint = rrb.Blueprint(
+    rrb.Spatial3DView(
+        origin="/",
+        name="3D Scene",
+        background=[0, 0, 0],  # RGB for black
+    ),
+    collapse_panels=True,
+)
+
+rr.send_blueprint(blueprint)
 rr.set_time_sequence("stable_time", 0)
 rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Y_UP, static=True)
 for key, value in gt_pts.items():
