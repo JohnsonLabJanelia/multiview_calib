@@ -12,7 +12,7 @@ parser.add_argument("--height", required=True, type=int)
 parser.add_argument("-sl", "--square_length", required=True, type=float)
 parser.add_argument("-ml", "--marker_length", required=True, type=float)
 parser.add_argument("-d","--dictionary", required=True, type=int)
-
+parser.add_argument("-o", "--output_dir", required=True, type=str)
 
 args = parser.parse_args()
 
@@ -64,7 +64,7 @@ common_elements = set(valid_imgs[0]).intersection(*valid_imgs[1:])
 print(common_elements)  # Output: {2, 3}
 print(len(common_elements))
 
-output_dir = os.path.expanduser("~/Documents/MATLAB/telecentric-calibration/calib2/")
+output_dir = args.output_dir
 for cam in cam_names:
     per_cam_folder = os.path.join(output_dir, cam)
     print(per_cam_folder)
