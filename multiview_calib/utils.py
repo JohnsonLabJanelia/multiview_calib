@@ -299,7 +299,12 @@ def save_intrinsics_yaml(
 
 
 def read_intrinsics_yaml(filename):
-    fs = cv2.FileStorage(cv2.samples.findFile(filename, False), cv2.FileStorage_READ)
+    # NB: do not route this through cv2.samples.findFile() — for a missing file
+    # it returns "" (with a confusing "findFile(...) => ''" warning), and
+    # FileStorage("") then raises a cryptic "NULL or empty filename" error.
+    # Passing the path directly lets a missing file fall through to the
+    # graceful (False, ...) return below.
+    fs = cv2.FileStorage(filename, cv2.FileStorage_READ)
     if fs.isOpened():
         img_width = int(fs.getNode("image_width").real())
         img_height = int(fs.getNode("image_height").real())

@@ -11,7 +11,11 @@ from functools import partial
 import matplotlib
 
 matplotlib.use("Agg")  # Set the backend to 'Agg'
-import matplotlib.pyplot as plt
+# Use the object-oriented Figure API instead of pyplot: pyplot keeps global
+# "current figure" state and is NOT thread-safe, and this runs one worker
+# thread per camera. See get_charuco_intrinsics / the ThreadPoolExecutor below.
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 
 from multiview_calib.intrinsics import probe_monotonicity
 
@@ -277,6 +281,12 @@ def get_charuco_intrinsics(
                 mtx, dist, imsize, alpha, imsize, centerPrincipalPoint=False
             )
 
+            # Persist intrinsics BEFORE plotting. The monotonicity plot is
+            # diagnostic only; writing the yaml first guarantees a plotting
+            # failure can never leave this camera without intrinsics.
+            output_file = os.path.join(output_path, "{}.yaml".format(cam_name))
+            utils.save_intrinsics_yaml(output_file, imsize[1], imsize[0], mtx, dist)
+
             grid_norm, is_monotonic = probe_monotonicity(
                 mtx, dist, newcameramtx, imsize, N=100, M=100
             )
@@ -288,36 +298,34 @@ def get_charuco_intrinsics(
                 )
 
             frame = cv.imread(images[0])
-            plt.figure()
-            plt.imshow(cv.undistort(frame, mtx, dist, None, newcameramtx))
+            fig = Figure()
+            FigureCanvasAgg(fig)
+            ax = fig.add_subplot(111)
+            ax.imshow(cv.undistort(frame, mtx, dist, None, newcameramtx))
             grid = (
                 grid_norm * newcameramtx[[0, 1], [0, 1]][None]
                 + newcameramtx[[0, 1], [2, 2]][None]
             )
-            plt.plot(
+            ax.plot(
                 grid[is_monotonic, 0],
                 grid[is_monotonic, 1],
                 ".g",
                 label="monotonic",
                 markersize=1.5,
             )
-            plt.plot(
+            ax.plot(
                 grid[~is_monotonic, 0],
                 grid[~is_monotonic, 1],
                 ".r",
                 label="not monotonic",
                 markersize=1.5,
             )
-            plt.legend()
-            plt.grid()
-            plt.savefig(
+            ax.legend()
+            ax.grid(True)
+            fig.savefig(
                 os.path.join(output_path, "monotonicity_{}.jpg".format(cam_name)),
                 bbox_inches="tight",
             )
-            plt.close()
-
-            output_file = os.path.join(output_path, "{}.yaml".format(cam_name))
-            utils.save_intrinsics_yaml(output_file, imsize[1], imsize[0], mtx, dist)
             return mtx, dist, newcameramtx
 
 
@@ -372,12 +380,28 @@ else:
             verbose=False,
         )
 
-        futures = [
-            executor.submit(partial_func, cam_name, images)
+        futures = {
+            executor.submit(partial_func, cam_name, images): cam_name
             for cam_name, images in zip(cam_names, images_all_cams)
-        ]
+        }
 
+        failed = []
         for future in concurrent.futures.as_completed(futures):
-            pass  # We don't store results, just wait for completion
+            cam_name = futures[future]
+            try:
+                future.result()  # re-raise any exception from the worker thread
+            except Exception:
+                # Without this, a failure in a worker thread (e.g. the plotting
+                # step) used to be silently swallowed, leaving that camera with
+                # no yaml and crashing the next pipeline stage instead.
+                logging.exception("Camera %s failed during intrinsics", cam_name)
+                failed.append(cam_name)
+
+        if failed:
+            raise RuntimeError(
+                "Intrinsics failed for camera(s): {}. See the log above.".format(
+                    ", ".join(map(str, failed))
+                )
+            )
 
     logging.info("All tasks completed.")
